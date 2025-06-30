@@ -1,0 +1,100 @@
+module Takehome_4(
+input clk,
+input [3:0] src1, src2, dest,
+input n,
+input enable_bus, enable_reg,
+output reg [31:0] out1, out2, out_dest
+);
+
+reg [31:0] registers [0:15];
+integer i;
+initial begin
+for (i = 0; i < 16; i = i + 1) begin
+registers[i] = 32'b0;
+end
+end
+
+reg [31:0] bus;
+
+always @(posedge clk) begin
+if (enable_bus) begin
+case (n)
+1'b0: bus = registers[src1];
+1'b1: bus = registers[src1];
+endcase
+end
+
+
+if (enable_reg) begin
+case (n)
+1'b0: registers[dest] = bus;
+1'b1: begin
+registers[src1] = registers[src2];
+registers[src2] = bus;
+end
+endcase
+end
+end
+
+
+
+always @(*) begin
+out1 = registers[src1];
+out2 = registers[src2];
+out_dest = registers[dest];
+end
+endmodule
+
+Test bench:
+
+module Takehome_4_tb();
+reg clk;
+reg [3:0] src1, src2, dest;
+reg n;
+reg enable_bus, enable_reg;
+
+wire [31:0] out1, out2, out_dest;
+
+Takehome_4 uut (
+.clk(clk),
+.src1(src1),
+.src2(src2),
+.dest(dest),
+.n(n),
+.enable_bus(enable_bus),
+.enable_reg(enable_reg),
+.out1(out1),
+.out2(out2),
+.out_dest(out_dest)
+);
+
+always #5 clk = ~clk;
+initial begin
+clk = 0;
+src1 = 0; src2 = 0; dest = 0;
+n = 0;
+enable_bus = 0; enable_reg = 0;
+#10;
+uut.registers[3] = 32'h12345678;
+src1 = 3;
+dest = 6;
+n = 1'b0;
+enable_bus = 1;
+#10;
+enable_bus = 0;enable_reg = 1;
+#10;
+enable_reg = 0;
+uut.registers[1] = 32'hAAAAAAAA;
+uut.registers[2] = 32'h55555555;
+src1 = 1;
+src2 = 2;
+n = 1'b1;
+enable_bus = 1;
+#10;
+enable_bus = 0;
+enable_reg = 1;
+#10;
+enable_reg = 0;
+$finish;
+end
+endmodule
